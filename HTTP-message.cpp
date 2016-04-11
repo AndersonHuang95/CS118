@@ -1,5 +1,7 @@
 #include <string>
 #include <iostream>
+#include <sstream>
+#include <vector>
 #include "HTTP-message.h"
 
 
@@ -7,23 +9,29 @@
 	HttpMessage Functions
 */
 
-HttpVersion HttpMessage :: getVersion() {
+std::string HttpMessage :: getVersion() {
 	return m_version;
 }
 
-void HttpMessage :: setHeader(string key, string value) {
+void HttpMessage :: setHeader(std::string key, std::string value) {
 	m_headers[key] = value;
 }
 
-string HttpMessage :: getHeader(string key) {
+std::string HttpMessage :: getHeader(std::string key) {
 	return m_headers[key];
 }
 
-// TODO
-void HttpMessage :: decodeHeaderLine(vector<uint_8> line);
+// Might miss if more than just 1 space???
+void HttpMessage :: decodeHeaderLine(vector<uint_8> line) {
+	std::stringstream ss(decode(line));
+	std::string key, value;
+	ss >> key >> value;
+	key.pop_back(); // Get rid of ':'
+	m_headers[key] = value;
+}
 
-void HttpMessage :: setPayLoad(vector<uint_8> blob) {
-	m_payload = blob;
+void HttpMessage :: setPayLoad(vector<uint_8> payload) {
+	m_payload = payload;
 }
 
 vector<uint_8> HttpMessage :: getPayload() {
@@ -35,22 +43,24 @@ vector<uint_8> HttpMessage :: getPayload() {
 	HttpRequest Functions
 */
 
-// TODO
-virtual void HttpRequest :: decodeFirstLine(vector<uint_8> line);
+virtual void HttpRequest :: decodeFirstLine(vector<uint_8> line) {
+	std::stringstream ss(decode(line));
+	ss >> m_method >> m_url >> m_version;
+}
 
-HttpMethod HttpRequest :: getMethod() {
+std::string HttpRequest :: getMethod() {
 	return m_method;
 }
 
-void HttpRequest :: setMethod(HttpMethod method) {
+void HttpRequest :: setMethod(std::string method) {
 	m_method = method;
 }
 
-string HttpRequest :: getUrl() {
+std::string HttpRequest :: getUrl() {
 	return m_url;
 }
 
-void HttpRequest :: setUrl(string url) {
+void HttpRequest :: setUrl(std::string url) {
 	m_url = url;
 }
 
@@ -58,23 +68,23 @@ void HttpRequest :: setUrl(string url) {
 	HttpResponse Functions
 */
 
-// TODO
 virtual void HttpResponse :: decodeFirstLine(vector<uint_8> line) {	
-
+	std::stringstream ss(decode(line));
+	ss >> m_version >> m_status >> m_statusDescription;
 }
 
-HttpStatus HttpResponse :: getStatus() {
+std::string HttpResponse :: getStatus() {
 	return m_status;
 }
 
-void HttpResponse :: setStatus(HttpStatus status) {
+void HttpResponse :: setStatus(std::string status) {
 	m_status = status;
 }
 
-string HttpResponse :: getDescription() {
+std::string HttpResponse :: getDescription() {
 	return m_description;
 }
 
-void HttpResponse :: setDescription(string description) {
-	m_description = description;
+void HttpResponse :: setDescription(std::string description) {
+	m_statusDescription = description;
 }

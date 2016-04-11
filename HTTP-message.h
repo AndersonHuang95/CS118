@@ -2,8 +2,6 @@
 #include <iostream>
 #include <map>
 
-enum HttpVersion {1.0, 1.1, 2.0};
-
 vector<uint8_t> encode(string message) {
 	vector<uint8_t> enc;
 	for (int i = 0; i < message.size(); i++) {
@@ -28,10 +26,10 @@ public:
 	void setHeader(string key, string value);
 	string getHeader(string key);
 	void decodeHeaderLine(vector<uint_8> line);
-	void setPayLoad(vector<uint_8> blob);
+	void setPayLoad(vector<uint_8> payload);
 	vector<uint_8> getPayload();
 private:
-	double m_version;
+	string m_version;
 	map<string, string> m_headers;
 	vector<uint_8> m_payload;
 };
@@ -44,18 +42,18 @@ public:
 	string getUrl();
 	void setUrl(string url);
 private:
-	HttpMethod m_method;
-	string m_url;
+	std::string m_method;
+	std::string m_url;
 };
 
 class HttpResponse : public HttpMessage{
 public:
 	virtual void decodeFirstLine(vector<uint_8> line);
-	HttpStatus getStatus();
-	void setStatus(HttpStatus status);
-	string getDescription();
-	void setDescription(string description);
+	std::string getStatus();
+	void setStatus(std::string status);
+	std::string getDescription();
+	void setDescription(std::string description);
 private:
-	HttpStatus m_status;
-	string m_statusDescription;
+	std::string m_status;
+	std::string m_statusDescription;
 };
