@@ -17,7 +17,6 @@ class HttpMessage {
 public:
   virtual void decodeFirstLine(ByteBlob line) = 0;
   HttpVersion getVersion();
-  void setVersion(std::string version);
   void setHeader(std::string key, std::string value);
   std::string getHeader(std::string key);
   void decodeHeaderLine(ByteBlob line);

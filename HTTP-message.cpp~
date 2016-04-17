@@ -29,15 +29,11 @@ string decode(ByteBlob message) {
 ///////////////////////////////////////
 
 string HttpMessage :: getVersion() {
-  return m_version;
-}
-
-void HttpMessage::setVersion(string version) {
-  m_version = version;
+	return m_version;
 }
 
 void HttpMessage :: setHeader(string key, string value) {
-  m_headers[key] = value;
+	m_headers[key] = value;
 }
 
 string HttpMessage :: getHeader(string key) {
@@ -68,27 +64,25 @@ ByteBlob HttpMessage :: getPayload() {
 /*                                  */
 //////////////////////////////////////
 
-void HttpRequest :: decodeFirstLine(ByteBlob line) {
-  stringstream ss(decode(line));
-  string v;
-  ss >> m_method >> m_url >> v;
-  setVersion(v);
+virtual void HttpRequest :: decodeFirstLine(ByteBlob line) {
+	stringstream ss(decode(line));
+	ss >> m_method >> m_url >> m_version;
 }
 
 string HttpRequest :: getMethod() {
-  return m_method;
+	return m_method;
 }
 
 void HttpRequest :: setMethod(string method) {
-  m_method = method;
+	m_method = method;
 }
 
 string HttpRequest :: getUrl() {
-  return m_url;
+	return m_url;
 }
 
 void HttpRequest :: setUrl(string url) {
-  m_url = url;
+	m_url = url;
 }
 
 /////////////////////////////////////
@@ -97,25 +91,23 @@ void HttpRequest :: setUrl(string url) {
 /*                                 */
 /////////////////////////////////////
 
-void HttpResponse :: decodeFirstLine(ByteBlob line) {	
-  stringstream ss(decode(line));
-  string v;
-  ss >> v >> m_status >> m_statusDescription;
-  setVersion(v);
+virtual void HttpResponse :: decodeFirstLine(ByteBlob line) {	
+	stringstream ss(decode(line));
+	ss >> m_version >> m_status >> m_statusDescription;
 }
 
 string HttpResponse :: getStatus() {
-  return m_status;
+	return m_status;
 }
 
 void HttpResponse :: setStatus(string status) {
-  m_status = status;
+	m_status = status;
 }
 
 string HttpResponse :: getDescription() {
-  return m_statusDescription;
+	return m_description;
 }
 
 void HttpResponse :: setDescription(string description) {
-  m_statusDescription = description;
+	m_statusDescription = description;
 }
