@@ -5,7 +5,6 @@
 
 using namespace std;
 
-
 ByteBlob encode(string message) {
   ByteBlob enc;
   for (int i = 0; i < message.size(); i++) {
@@ -28,11 +27,11 @@ string decode(ByteBlob message) {
 /*                                   */
 ///////////////////////////////////////
 
-string HttpMessage :: getVersion() {
+HttpVersion HttpMessage :: getVersion() {
   return m_version;
 }
 
-void HttpMessage::setVersion(string version) {
+void HttpMessage::setVersion(HttpVersion version) {
   m_version = version;
 }
 
@@ -75,11 +74,11 @@ void HttpRequest :: decodeFirstLine(ByteBlob line) {
   setVersion(v);
 }
 
-string HttpRequest :: getMethod() {
+HttpMethod HttpRequest :: getMethod() {
   return m_method;
 }
 
-void HttpRequest :: setMethod(string method) {
+void HttpRequest :: setMethod(HttpMethod method) {
   m_method = method;
 }
 
@@ -99,16 +98,16 @@ void HttpRequest :: setUrl(string url) {
 
 void HttpResponse :: decodeFirstLine(ByteBlob line) {	
   stringstream ss(decode(line));
-  string v;
+  HttpVersion v;
   ss >> v >> m_status >> m_statusDescription;
   setVersion(v);
 }
 
-string HttpResponse :: getStatus() {
+HttpStatus HttpResponse :: getStatus() {
   return m_status;
 }
 
-void HttpResponse :: setStatus(string status) {
+void HttpResponse :: setStatus(HttpStatus status) {
   m_status = status;
 }
 

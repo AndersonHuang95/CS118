@@ -24,7 +24,7 @@ public:
   void setPayLoad(ByteBlob payload);
   ByteBlob getPayload();
 private:
-  std::string m_version;
+  HttpVersion  m_version;
   std::map<std::string, std::string> m_headers;
   ByteBlob m_payload;
 };
@@ -37,19 +37,19 @@ public:
   std::string getUrl();
   void setUrl(std::string url);
 private:
-  std::string m_method;
+  HttpMethod  m_method;
   std::string m_url;
 };
 
 class HttpResponse : public HttpMessage {
 public:
   virtual void decodeFirstLine(ByteBlob line);
-  std::string getStatus();
+  HttpStatus getStatus();
   void setStatus(std::string status);
   std::string getDescription();
   void setDescription(std::string description);
 private:
-  std::string m_status;
+  HttpStatus m_status;
   std::string m_statusDescription;
 };
 #endif
