@@ -5,34 +5,18 @@
 
 using namespace std;
 
-ByteBlob encode(string message) {
-  ByteBlob enc;
-  for (int i = 0; i < message.size(); i++) {
-    enc.push_back((uint8_t)message[i]);
-  }
-  return enc;
-}
-
-string decode(ByteBlob message) {
-  string dec;
-  for (int i = 0; i < message.size(); i++) {
-    dec += (char)message[i];
-  }
-  return dec;
-}
-
 ///////////////////////////////////////
 /*                                   */
 /* HttpMessage functions             */
 /*                                   */
 ///////////////////////////////////////
 
+HttpMessage :: HttpMessage() 
+	: m_version("1.0")
+{}
+
 HttpVersion HttpMessage :: getVersion() {
   return m_version;
-}
-
-void HttpMessage::setVersion(HttpVersion version) {
-  m_version = version;
 }
 
 void HttpMessage :: setHeader(string key, string value) {
@@ -58,6 +42,10 @@ void HttpMessage :: setPayLoad(ByteBlob payload) {
 
 ByteBlob HttpMessage :: getPayload() {
   return m_payload;
+}
+
+std::map<std::string, std::string> getHeaders() {
+	return m_headers;
 }
 
 
@@ -90,6 +78,17 @@ void HttpRequest :: setUrl(string url) {
   m_url = url;
 }
 
+ByteBlob HttpRequest :: encode() {
+	string firstLine = getMethod() + " " + getUrl() + " HTTP/" + getVersion() + "/r/n";
+	map<string, string> headers = getHeaders();
+	string headerLines;
+	for(const auto it = headers.begin(); it != headers.end(); ++it) {
+		headerLines += it->first + ": " + it->second + "/r/n";
+	}
+	string HTTP = firstLine + headerLines + "/r/n";
+	return ByteBlob(HTTP.begin(), HTTP.end());
+}
+
 /////////////////////////////////////
 /*                                 */
 /* HttpResponse Functions          */
@@ -118,3 +117,15 @@ string HttpResponse :: getDescription() {
 void HttpResponse :: setDescription(string description) {
   m_statusDescription = description;
 }
+
+ByteBlob HttpResponse :: encode() {
+	string firstLine = "HTTP/" + getVersion() + " " + getStatus() + " " + getDescription() + "/r/n"; 
+	map<string, string> headers = getHeaders();
+	string headerLines;
+	for(const auto it = headers.begin(); it != headers.end(); ++it) {
+		headerLines += it->first + ": " + it->second + "/r/n";
+	}
+	string HTTP = firstLine + headerLines + "/r/n" + getPayload();
+	return ByteBlob(HTTP.begin(), HTTP.end());
+}
+
