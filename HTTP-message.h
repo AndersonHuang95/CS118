@@ -12,7 +12,6 @@ typedef std::string HttpStatus;
 
 class HttpMessage {
 public:
-  HttpMessage();
   virtual void decodeFirstLine(ByteBlob line) = 0;
   virtual ByteBlob encode() = 0;
   HttpVersion getVersion();
@@ -30,6 +29,8 @@ private:
 
 class HttpRequest : public HttpMessage {
 public:
+  HttpRequest(string url);
+  HttpRequest(ByteBlob wire);
   virtual void decodeFirstLine(ByteBlob line);
   HttpMethod getMethod();
   void setMethod(HttpMethod method);

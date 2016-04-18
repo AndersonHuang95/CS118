@@ -1,7 +1,7 @@
 #include "HTTP-message.h"
 
 #include <iostream>
-#include <sstream>
+#include <sstream> // Maybe don't need if take out decode lines??????
 
 using namespace std;
 
@@ -10,10 +10,6 @@ using namespace std;
 /* HttpMessage functions             */
 /*                                   */
 ///////////////////////////////////////
-
-HttpMessage :: HttpMessage() 
-	: m_version("1.0")
-{}
 
 HttpVersion HttpMessage :: getVersion() {
   return m_version;
@@ -28,6 +24,7 @@ string HttpMessage :: getHeader(string key) {
 }
 
 // Might miss if more than just 1 space???
+// Do we need this????????
 void HttpMessage :: decodeHeaderLine(ByteBlob line) {
   stringstream ss(decode(line));
   string key, value;
@@ -44,7 +41,7 @@ ByteBlob HttpMessage :: getPayload() {
   return m_payload;
 }
 
-std::map<std::string, std::string> getHeaders() {
+std::map<std::string, std::string> HttpMessage :: getHeaders() {
 	return m_headers;
 }
 
@@ -55,12 +52,62 @@ std::map<std::string, std::string> getHeaders() {
 /*                                  */
 //////////////////////////////////////
 
+HttpRequest :: HttpRequest(string url) {
+	setMethod("GET");
+	int index = 0;
+	while (url[index] != '/') // Skips http://
+		index++;
+	index += 2;
+	string host;
+	while (url[index] != '/')
+		host += url[index++];
+	setHeader("Host", host);
+	setUrl(url.substr(index));
+}
+
+HttpRequest :: HttpRequest(ByteBlob wire) {
+	int index = 0;
+	
+	// method
+	while (wire[index] != ' ')
+		m_method += wire[index++];
+	index++;
+
+	// url
+	while (wire[index] != ' ')
+		m_url += wire[index++];
+	index++;
+
+	// skip HTTP/
+	while (wire[index] != '/')
+		index++;
+	
+	// version
+	while (wire[index] != '\r')
+		m_version += wire[index++];
+
+	index += 2;
+
+	// headers
+	while (wire[index] != '\r') {
+		string key;
+		string value;
+		while (wire[index] != ':')
+			key += wire[index++];
+		index++;
+		while (wire[index] != '\r')
+			value += wire[index++];
+		index += 2;
+		setHeader(key, value);
+	}
+}
+
+// Do we need this????????
 void HttpRequest :: decodeFirstLine(ByteBlob line) {
   stringstream ss(decode(line));
-  string v;
-  ss >> m_method >> m_url >> v;
-  setVersion(v);
+  ss >> m_method >> m_url;
 }
+
 
 HttpMethod HttpRequest :: getMethod() {
   return m_method;
@@ -95,6 +142,7 @@ ByteBlob HttpRequest :: encode() {
 /*                                 */
 /////////////////////////////////////
 
+// Do we need this????????
 void HttpResponse :: decodeFirstLine(ByteBlob line) {	
   stringstream ss(decode(line));
   HttpVersion v;
