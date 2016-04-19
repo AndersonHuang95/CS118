@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <stdint.h> // uint8_t
 
 typedef std::vector<uint8_t> ByteBlob;
 typedef std::string HttpVersion;
@@ -13,11 +14,12 @@ typedef std::string HttpStatus;
 class HttpMessage {
 public:
   virtual void decodeFirstLine(ByteBlob line) = 0;
-  virtual ByteBlob encode() = 0;
+  // virtual ByteBlob encode() = 0; // not defined 
   HttpVersion getVersion();
+  void setVersion(std::string version); 
   void setHeader(std::string key, std::string value);
   std::string getHeader(std::string key);
-  void decodeHeaderLine(ByteBlob line);
+  // void decodeHeaderLine(ByteBlob line); // not defined 
   void setPayLoad(ByteBlob payload);
   ByteBlob getPayload();
   std::map<std::string, std::string> getHeaders();
@@ -29,7 +31,7 @@ private:
 
 class HttpRequest : public HttpMessage {
 public:
-  HttpRequest(string url);
+  HttpRequest(std::string url);
   HttpRequest(ByteBlob wire);
   virtual void decodeFirstLine(ByteBlob line);
   HttpMethod getMethod();

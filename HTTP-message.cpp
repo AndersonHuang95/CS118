@@ -15,6 +15,10 @@ HttpVersion HttpMessage :: getVersion() {
   return m_version;
 }
 
+void HttpMessage :: setVersion(string version){
+	m_version = version; 
+}
+
 void HttpMessage :: setHeader(string key, string value) {
   m_headers[key] = value;
 }
@@ -23,6 +27,7 @@ string HttpMessage :: getHeader(string key) {
   return m_headers[key];
 }
 
+/*
 // Might miss if more than just 1 space???
 // Do we need this????????
 void HttpMessage :: decodeHeaderLine(ByteBlob line) {
@@ -32,6 +37,7 @@ void HttpMessage :: decodeHeaderLine(ByteBlob line) {
   key.pop_back(); // Get rid of ':'
   m_headers[key] = value;
 }
+*/
 
 void HttpMessage :: setPayLoad(ByteBlob payload) {
   m_payload = payload;
@@ -83,8 +89,10 @@ HttpRequest :: HttpRequest(ByteBlob wire) {
 		index++;
 	
 	// version
+	string version; 
 	while (wire[index] != '\r')
-		m_version += wire[index++];
+		version += wire[index++];
+	setVersion(version); 
 
 	index += 2;
 
@@ -102,12 +110,18 @@ HttpRequest :: HttpRequest(ByteBlob wire) {
 	}
 }
 
+/* Taken out because decode is no longer defined 
 // Do we need this????????
 void HttpRequest :: decodeFirstLine(ByteBlob line) {
   stringstream ss(decode(line));
   ss >> m_method >> m_url;
 }
+*/
+void HttpRequest :: decodeFirstLine(ByteBlob line){
+	// added for compilation purposes
+	// Fix later 
 
+}
 
 HttpMethod HttpRequest :: getMethod() {
   return m_method;
@@ -129,7 +143,7 @@ ByteBlob HttpRequest :: encode() {
 	string firstLine = getMethod() + " " + getUrl() + " HTTP/" + getVersion() + "/r/n";
 	map<string, string> headers = getHeaders();
 	string headerLines;
-	for(const auto it = headers.begin(); it != headers.end(); ++it) {
+	for(map<string, string>::iterator it = headers.begin(); it != headers.end(); ++it) {
 		headerLines += it->first + ": " + it->second + "/r/n";
 	}
 	string HTTP = firstLine + headerLines + "/r/n";
@@ -142,12 +156,19 @@ ByteBlob HttpRequest :: encode() {
 /*                                 */
 /////////////////////////////////////
 
+/*
 // Do we need this????????
 void HttpResponse :: decodeFirstLine(ByteBlob line) {	
   stringstream ss(decode(line));
   HttpVersion v;
   ss >> v >> m_status >> m_statusDescription;
   setVersion(v);
+}
+*/
+
+void HttpResponse :: decodeFirstLine(ByteBlob line){
+	// added for compilation purposes
+	// Fix later 
 }
 
 HttpStatus HttpResponse :: getStatus() {
@@ -170,10 +191,9 @@ ByteBlob HttpResponse :: encode() {
 	string firstLine = "HTTP/" + getVersion() + " " + getStatus() + " " + getDescription() + "/r/n"; 
 	map<string, string> headers = getHeaders();
 	string headerLines;
-	for(const auto it = headers.begin(); it != headers.end(); ++it) {
+	for(map<string, string>::iterator it = headers.begin(); it != headers.end(); ++it) {
 		headerLines += it->first + ": " + it->second + "/r/n";
 	}
-	string HTTP = firstLine + headerLines + "/r/n" + getPayload();
+	string HTTP = firstLine + headerLines + "/r/n" + string(getPayload().begin(), getPayload().end());
 	return ByteBlob(HTTP.begin(), HTTP.end());
 }
-
