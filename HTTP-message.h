@@ -13,6 +13,7 @@ typedef std::string HttpStatus;
 
 class HttpMessage {
 public:
+  HttpMessage(); 
   virtual void decodeFirstLine(ByteBlob line) = 0;
   // virtual ByteBlob encode() = 0; // not defined 
   HttpVersion getVersion();

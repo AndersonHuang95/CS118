@@ -11,6 +11,9 @@ using namespace std;
 /*                                   */
 ///////////////////////////////////////
 
+HttpMessage :: HttpMessage(){
+	m_version = "1.0"; 
+}
 HttpVersion HttpMessage :: getVersion() {
   return m_version;
 }
@@ -58,6 +61,8 @@ std::map<std::string, std::string> HttpMessage :: getHeaders() {
 /*                                  */
 //////////////////////////////////////
 
+// Constructors 
+
 HttpRequest :: HttpRequest(string url) {
 	setMethod("GET");
 	int index = 0;
@@ -69,6 +74,9 @@ HttpRequest :: HttpRequest(string url) {
 		host += url[index++];
 	setHeader("Host", host);
 	setUrl(url.substr(index));
+
+	setHeader("Accept", "*/*");
+	setHeader("Connection", "Close"); // non-persistent
 }
 
 HttpRequest :: HttpRequest(ByteBlob wire) {
@@ -140,13 +148,13 @@ void HttpRequest :: setUrl(string url) {
 }
 
 ByteBlob HttpRequest :: encode() {
-	string firstLine = getMethod() + " " + getUrl() + " HTTP/" + getVersion() + "/r/n";
+	string firstLine = getMethod() + " " + getUrl() + " HTTP/" + getVersion() + "\r\n";
 	map<string, string> headers = getHeaders();
 	string headerLines;
 	for(map<string, string>::iterator it = headers.begin(); it != headers.end(); ++it) {
-		headerLines += it->first + ": " + it->second + "/r/n";
+		headerLines += it->first + ": " + it->second + "\r\n";
 	}
-	string HTTP = firstLine + headerLines + "/r/n";
+	string HTTP = firstLine + headerLines + "\r\n";
 	return ByteBlob(HTTP.begin(), HTTP.end());
 }
 
@@ -188,12 +196,12 @@ void HttpResponse :: setDescription(string description) {
 }
 
 ByteBlob HttpResponse :: encode() {
-	string firstLine = "HTTP/" + getVersion() + " " + getStatus() + " " + getDescription() + "/r/n"; 
+	string firstLine = "HTTP/" + getVersion() + " " + getStatus() + " " + getDescription() + "\r\n"; 
 	map<string, string> headers = getHeaders();
 	string headerLines;
 	for(map<string, string>::iterator it = headers.begin(); it != headers.end(); ++it) {
-		headerLines += it->first + ": " + it->second + "/r/n";
+		headerLines += it->first + ": " + it->second + "\r\n";
 	}
-	string HTTP = firstLine + headerLines + "/r/n" + string(getPayload().begin(), getPayload().end());
+	string HTTP = firstLine + headerLines + "\r\n" + string(getPayload().begin(), getPayload().end());
 	return ByteBlob(HTTP.begin(), HTTP.end());
 }
