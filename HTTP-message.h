@@ -39,10 +39,13 @@ public:
   void setMethod(HttpMethod method);
   std::string getUrl();
   void setUrl(std::string url);
+  std::string getPortNum(); 
+  void setPortNum(std::string port_num); 
   ByteBlob encode();
 private:
   HttpMethod  m_method;
   std::string m_url;
+  std::string m_port; // Added port number 
 };
 
 class HttpResponse : public HttpMessage {

@@ -69,10 +69,21 @@ HttpRequest :: HttpRequest(string url) {
 	while (url[index] != '/') // Skips http://
 		index++;
 	index += 2;
-	string host;
-	while (url[index] != '/')
+	string host, port_num = "80"; 
+	while (url[index] != '/'){
+		if (url[index] == ':')
+			break; 
 		host += url[index++];
+	}
+	if(url[index] == ':'){
+		// reset port_num 
+		port_num = ""; 
+		index++; 
+		while(url[index] != '/')
+			port_num += url[index++]; 
+	}
 	setHeader("Host", host);
+	setPortNum(port_num); 
 	setUrl(url.substr(index));
 
 	setHeader("Accept", "*/*");
@@ -145,6 +156,14 @@ string HttpRequest :: getUrl() {
 
 void HttpRequest :: setUrl(string url) {
   m_url = url;
+}
+
+string HttpRequest :: getPortNum(){
+	return m_port; 
+}
+
+void HttpRequest :: setPortNum(string port_num){
+	m_port = port_num;
 }
 
 ByteBlob HttpRequest :: encode() {
