@@ -7,7 +7,8 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string> 
-#include <iostream>
+#include <iostream>	// consoel I/O
+#include <fstream> 	// file I/O
 #include <sstream>
 #include <cstdlib> 
 #include <netdb.h>
@@ -85,15 +86,23 @@ main(int argc, char **argv)
 	ret = write(sockfd, copy_of_request.data(), size); 
 	if (ret < 0)
 		perror("socket write failed");
-	while (ret > 0) {
-		memset(buf, 0, 8192); 
-		ret = read(sockfd, buf, 8192); 
+
+	// TODO: 
+	// Parse HTTPResponse
+	// Handle errors accordingly 
+	// Open a output file stream if successful and stuff data there
+	std::ofstream outfile("filename"); 
+	while ( (ret = read(sockfd, buf, sizeof(buf))) != 0) {
 		if (ret < 0)
 			error("socket read failed"); 
 		std::cout << buf;
+		memset(buf, 0, sizeof(buf)); 
 	}
+
+	// free unneeded structures, close fds 
 	freeaddrinfo(servinfo); // all done with this structure
   	close(sockfd); 
+
   	return 0; 
 }
 
