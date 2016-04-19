@@ -31,8 +31,8 @@ main(int argc, char **argv)
 	// Create a HTTP Request
 	std::string s(argv[1]); 
 	HttpRequest request(s);
-	ByteBlob message = request.encode(); 
-	std::string out(message.begin(), message.end()); 
+	ByteBlob message = request.encode();  
+	std::string out(message.begin(), message.end());
 	std::cout << out;
 	std::cout << request.getPortNum() << std::endl; 
 
@@ -85,12 +85,13 @@ main(int argc, char **argv)
 	ret = write(sockfd, copy_of_request.data(), size); 
 	if (ret < 0)
 		perror("socket write failed");
-	memset(buf, 0, 8192); 
-	ret = read(sockfd, buf, 8192); 
-	if (ret < 0)
-		error("socket read failed"); 
-	printf("%s\n", buf); 
-
+	while (ret > 0) {
+		memset(buf, 0, 8192); 
+		ret = read(sockfd, buf, 8192); 
+		if (ret < 0)
+			error("socket read failed"); 
+		std::cout << buf;
+	}
 	freeaddrinfo(servinfo); // all done with this structure
   	close(sockfd); 
   	return 0; 

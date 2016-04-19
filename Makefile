@@ -13,7 +13,7 @@ web-client: $(CLASSES)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $@.cpp 
 
 clean:
-	rm -rf *.o *~ *.gch *.swp *.dSYM web-server web-client *.tar.gz
+	rm -rf *.o *~ *.gch *.swp *.dSYM web-server web-client *.tar.gz HTTP-message
 
 tarball: clean
 	tar -cvf $(USERID).tar.gz *
