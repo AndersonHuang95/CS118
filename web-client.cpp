@@ -102,13 +102,13 @@ main(int argc, char **argv)
 	// Parse HTTPResponse
 	// Handle errors accordingly 
 	// Open a output file stream if successful and stuff data there 
-	char buf[8192];
+	uint8_t buf[8192];
 	memset(buf, 0, sizeof(buf)); 
 	while ( (ret = read(sockfd, buf, sizeof(buf))) != 0) {
 		// std::cout << ret << std::endl;
 		if (ret < 0)
 			error("socket read failed"); 
-		response.insert(response.end(), buf, buf + strlen(buf));
+		response.insert(response.end(), buf, buf + ret);
 		memset(buf, 0, sizeof(buf)); 
 	}
 
@@ -138,7 +138,7 @@ main(int argc, char **argv)
 	else if (status_code == "505")
 		std::cout << "505 HTTP version not supported\n";
 	else
-		std::cout << "Unknown error code encountered\n";
+		std::cout << status_code << " error code encountered\n";
 
 	while(response[index] != '\r' || response[index + 1] != '\n' || response[index + 2] != '\r' || response[index + 3] != '\n')
 		index++;
@@ -148,10 +148,10 @@ main(int argc, char **argv)
 	for(int j = 0; j < response.size(); j++)
 		std::cout << response[j]; 
 	*/
-	
+
 	// response.erase(response.begin(), response.begin() + index); 
 	// Store remaining reponse into filename
-	std::ofstream outfile(filename);
+	std::ofstream outfile(filename, std::ios::out | std::ios::binary);
 	std::ostream_iterator<uint8_t> oi(outfile, ""); 
 	std::copy(response.begin() + index, response.end(), oi); 
 	// free unneeded structures, close fds 
