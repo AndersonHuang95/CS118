@@ -10,6 +10,8 @@
 #include <unistd.h>
 #include <netdb.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/sendfile.h>
 
 #include <string>
 #include <iostream>
@@ -32,7 +34,7 @@ void threadFunc(int clientSockfd) {
 	}
 
 	HttpRequest h(buf);
-	HttpResponse r();
+	HttpResponse r;
 	
 	r.setStatus("200");
 	r.setDescription("OK");
@@ -49,10 +51,9 @@ void threadFunc(int clientSockfd) {
 	r.setHeader("Accept-Ranges", "none");
 	r.setHeader("Vary", "Accept-Encoding");
 
-	int fd = open(h.getURL(), O_RDONLY);
-	if (fr ==  NULL) {
+	int fd = open(h.getUrl().c_str(), O_RDONLY);
+	if (fd ==  -1) {
 		fprintf(stderr, "Error opening file --> %s", strerror(errno));
-		exit(EXIT_FAILURE);
 	}
 
 
@@ -60,13 +61,13 @@ void threadFunc(int clientSockfd) {
 	struct stat file_stat;
 	if (fstat(fd, &file_stat) < 0) {
 		fprintf(stderr, "Error fstat --> %s", strerror(errno));
-		exit(EXIT_FAILURE);
 	}
-	r.setHeader("Content-Length", file_stat.st_size);
-	offset = 0;
-	remain_data = file_stat.st_size;
+	r.setHeader("Content-Length", to_string(file_stat.st_size));
+	long int offset = 0;
+	int remain_data = file_stat.st_size;
+	int sent_bytes;
 	/* Sending file data */
-	while (((sent_bytes = sendfile(peer_socket, fd, &offset, BUFSIZ)) > 0) && (remain_data > 0)) {
+	while (((sent_bytes = sendfile(clientSockfd, fd, &offset, BUFSIZ)) > 0) && (remain_data > 0)) {
 		fprintf(stdout, "1. Server sent %d bytes from file's data, offset is now : %d and remaining data = %d\n", sent_bytes, offset, remain_data);
 		remain_data -= sent_bytes;
 		fprintf(stdout, "2. Server sent %d bytes from file's data, offset is now : %d and remaining data = %d\n", sent_bytes, offset, remain_data);
@@ -101,7 +102,7 @@ int main(int argc, char **argv)
 
   // get address
   int status = 0;
-  if ((status = getaddrinfo(hostName, port, &hints, &res)) != 0) {
+  if ((status = getaddrinfo(hostName.c_str(), port.c_str(), &hints, &res)) != 0) {
     cerr << "getaddrinfo: " << gai_strerror(status) << endl;
     return 2;
   }
@@ -129,8 +130,8 @@ int main(int argc, char **argv)
   // bind address to socket
   struct sockaddr_in addr;
   addr.sin_family = AF_INET;
-  addr.sin_port = htons(atoi(port));     // short, network byte order
-  addr.sin_addr.s_addr = inet_addr(hostName);
+  addr.sin_port = htons(stoi(port));     // short, network byte order
+  addr.sin_addr.s_addr = inet_addr(hostName.c_str());
   memset(addr.sin_zero, '\0', sizeof(addr.sin_zero));
 
   if (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
