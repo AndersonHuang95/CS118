@@ -15,14 +15,7 @@
 #include <iterator> 
 #include "HTTP-message.h" 
 
-void error(const char *msg)
-{
-    perror(msg);
-    exit(0);
-}
-
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	// Parse command line args
 	if (argc != 2){
@@ -33,19 +26,9 @@ main(int argc, char **argv)
 	// Create a HTTP Request
 	std::string s(argv[1]); 
 	HttpRequest request(s);
-	/*
-	ByteBlob message = request.encode();  
-	std::string out(message.begin(), message.end());
-	std::cout << out;
-	std::cout << request.getPortNum() << std::endl; 
-	*/
-
-	// code for a client connecting to a server
-	// namely a stream socket to www.example.com on port 80 (http)
-	// either IPv4 or IPv6
 
 	int sockfd; // client socket  
-	struct addrinfo hints, *servinfo, *p;	
+	struct addrinfo hints, *server_info, *p;	
 	int ret;	// check success/failure of socket API calls 
 
 	memset(&hints, 0, sizeof hints);
@@ -53,13 +36,13 @@ main(int argc, char **argv)
 	hints.ai_socktype = SOCK_STREAM;
 
 	std::map<std::string, std::string> headers = request.getHeaders(); 
-	if ((ret = getaddrinfo(headers["Host"].c_str(), request.getPortNum().c_str(), &hints, &servinfo)) != 0) {
+	if ((ret = getaddrinfo(headers["Host"].c_str(), request.getPortNum().c_str(), &hints, &server_info)) != 0) {
 	    std::cerr << "getaddrinfo: %s\n", gai_strerror(ret);
 	    exit(1);
 	}
 
 	// loop through all the results and connect to the first we can
-	for(p = servinfo; p != NULL; p = p->ai_next) {
+	for(p = server_info; p != NULL; p = p->ai_next) {
 		
 	    if ((sockfd = socket(p->ai_family, p->ai_socktype,
 	            p->ai_protocol)) == -1) {
@@ -87,27 +70,30 @@ main(int argc, char **argv)
 	ByteBlob copy_of_request = request.encode();
 	int size = copy_of_request.size();  
 	ret = write(sockfd, copy_of_request.data(), size); 
-	if (ret < 0)
+	if (ret < 0){
 		perror("socket write failed");
+		exit(3); 
+	}
 
 	// Get the filename 
 	std::string path = request.getUrl(); 
 	std::stringstream ss(path); 
 	std::string token, filename; 
 
+	// Filename is after the last forward slash 
 	while(std::getline(ss, token, '/')){
 		filename = token; 
 	}
-	// TODO: 
-	// Parse HTTPResponse
-	// Handle errors accordingly 
-	// Open a output file stream if successful and stuff data there 
+
+	// Read all data first before parsing 
 	uint8_t buf[8192];
 	memset(buf, 0, sizeof(buf)); 
 	while ( (ret = read(sockfd, buf, sizeof(buf))) != 0) {
 		// std::cout << ret << std::endl;
-		if (ret < 0)
-			error("socket read failed"); 
+		if (ret < 0){
+			perror("socket read failed"); 
+			exit(4); 
+		}
 		response.insert(response.end(), buf, buf + ret);
 		memset(buf, 0, sizeof(buf)); 
 	}
@@ -126,7 +112,7 @@ main(int argc, char **argv)
 	std::cout << "HTTP request sent, awaiting response... "; 
 	// Deal with status code 
 	if(status_code == "200")
-		std::cout << "200 OK\n";
+		std::cout << "200 OK\nSaving file to " << filename << "\n";
 	else if (status_code == "400")
 		std::cout << "400 Bad Request\n";
 	else if (status_code == "404")
@@ -140,22 +126,18 @@ main(int argc, char **argv)
 	else
 		std::cout << status_code << " error code encountered\n";
 
+	// Advance to response payload
 	while(response[index] != '\r' || response[index + 1] != '\n' || response[index + 2] != '\r' || response[index + 3] != '\n')
 		index++;
 	index = index + 4; 
-	// Erase first (index) bytes
-	/*
-	for(int j = 0; j < response.size(); j++)
-		std::cout << response[j]; 
-	*/
 
-	// response.erase(response.begin(), response.begin() + index); 
-	// Store remaining reponse into filename
+	// Copy response body into output file stream 
 	std::ofstream outfile(filename, std::ios::out | std::ios::binary);
 	std::ostream_iterator<uint8_t> oi(outfile, ""); 
 	std::copy(response.begin() + index, response.end(), oi); 
+
 	// free unneeded structures, close fds 
-	freeaddrinfo(servinfo); // all done with this structure
+	freeaddrinfo(server_info); 
   	close(sockfd); 
 
   	return 0; 
