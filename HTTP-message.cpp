@@ -216,11 +216,24 @@ void HttpResponse :: setDescription(string description) {
 
 ByteBlob HttpResponse :: encode() {
 	string firstLine = "HTTP/" + getVersion() + " " + getStatus() + " " + getDescription() + "\r\n"; 
+	//cout << "setup" << endl;
 	map<string, string> headers = getHeaders();
+	//cout << "headers" << endl;
 	string headerLines;
 	for(map<string, string>::iterator it = headers.begin(); it != headers.end(); ++it) {
 		headerLines += it->first + ": " + it->second + "\r\n";
+		//cout << "First: " << it->first << endl;
+		//cout << "Second: " << it->second << endl;
 	}
-	string HTTP = firstLine + headerLines + "\r\n" + string(getPayload().begin(), getPayload().end());
+	// cout << "sizeof firstLine: " << firstLine.size() << endl;
+    //cout << "sizeof headerLines: " << headerLines.size() << endl;
+    // 	cout << "sizeof payload: " << getPayload().size() << endl;
+	ByteBlob p = getPayload();
+	string pay;
+	for (unsigned int i = 0; i < p.size(); ++i)
+		pay += p[i];
+	//cout << "sizeof pay: " << pay.size() << endl;
+	string HTTP = firstLine + headerLines + "\r\n" + pay;
+	
 	return ByteBlob(HTTP.begin(), HTTP.end());
 }
