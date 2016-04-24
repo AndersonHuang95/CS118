@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string> 
-#include <iostream>	// consoel I/O
+#include <iostream>	// console I/O
 #include <fstream> 	// file I/O
 #include <sstream>
 #include <cstdlib> 
@@ -85,6 +85,12 @@ int main(int argc, char **argv)
 		filename = token; 
 	}
 
+	// Filename may be empty 
+	// e.g. http://www.cnn.com/
+	// If retrieval successful, save to default filename of index.html 
+	if (filename.empty())
+		filename = "index.html";
+
 	// Read all data first before parsing 
 	uint8_t buf[8192];
 	memset(buf, 0, sizeof(buf)); 
@@ -125,6 +131,11 @@ int main(int argc, char **argv)
 		std::cout << "505 HTTP version not supported\n";
 	else
 		std::cout << status_code << " error code encountered\n";
+
+	// Exit upon unsuccessful retrieval 
+	if(status_code != "200"){
+		exit(1); 
+	}
 
 	// Advance to response payload
 	while(response[index] != '\r' || response[index + 1] != '\n' || response[index + 2] != '\r' || response[index + 3] != '\n')

@@ -14,13 +14,11 @@ typedef std::string HttpStatus;
 class HttpMessage {
 public:
   HttpMessage(); 
-  virtual void decodeFirstLine(ByteBlob line) = 0;
-  // virtual ByteBlob encode() = 0; // not defined 
+  virtual ByteBlob encode() = 0; // not defined 
   HttpVersion getVersion();
   void setVersion(std::string version); 
   void setHeader(std::string key, std::string value);
   std::string getHeader(std::string key);
-  // void decodeHeaderLine(ByteBlob line); // not defined 
   void setPayLoad(ByteBlob payload);
   ByteBlob getPayload();
   std::map<std::string, std::string> getHeaders();
@@ -34,7 +32,6 @@ class HttpRequest : public HttpMessage {
 public:
   HttpRequest(std::string url);
   HttpRequest(ByteBlob wire);
-  virtual void decodeFirstLine(ByteBlob line);
   HttpMethod getMethod();
   void setMethod(HttpMethod method);
   std::string getUrl();
@@ -50,7 +47,6 @@ private:
 
 class HttpResponse : public HttpMessage {
 public:
-  virtual void decodeFirstLine(ByteBlob line);
   HttpStatus getStatus();
   void setStatus(std::string status);
   std::string getDescription();

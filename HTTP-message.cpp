@@ -1,7 +1,7 @@
 #include "HTTP-message.h"
 
 #include <iostream>
-#include <sstream> // Maybe don't need if take out decode lines??????
+#include <sstream> 
 
 using namespace std;
 
@@ -11,13 +11,33 @@ using namespace std;
 /*                                   */
 ///////////////////////////////////////
 
+// HTTP 1.0 by default 
 HttpMessage :: HttpMessage(){
 	m_version = "1.0"; 
 }
+
+////////////////////
+// Getters 
+/////////////////// 
 HttpVersion HttpMessage :: getVersion() {
   return m_version;
 }
 
+string HttpMessage :: getHeader(string key) {
+  return m_headers[key];
+}
+
+std::map<std::string, std::string> HttpMessage :: getHeaders() {
+	return m_headers;
+}
+
+ByteBlob HttpMessage :: getPayload() {
+  return m_payload;
+}
+
+////////////////////
+// Setters
+/////////////////// 
 void HttpMessage :: setVersion(string version){
 	m_version = version; 
 }
@@ -26,32 +46,8 @@ void HttpMessage :: setHeader(string key, string value) {
   m_headers[key] = value;
 }
 
-string HttpMessage :: getHeader(string key) {
-  return m_headers[key];
-}
-
-/*
-// Might miss if more than just 1 space???
-// Do we need this????????
-void HttpMessage :: decodeHeaderLine(ByteBlob line) {
-  stringstream ss(decode(line));
-  string key, value;
-  ss >> key >> value;
-  key.pop_back(); // Get rid of ':'
-  m_headers[key] = value;
-}
-*/
-
 void HttpMessage :: setPayLoad(ByteBlob payload) {
   m_payload = payload;
-}
-
-ByteBlob HttpMessage :: getPayload() {
-  return m_payload;
-}
-
-std::map<std::string, std::string> HttpMessage :: getHeaders() {
-	return m_headers;
 }
 
 
@@ -61,8 +57,9 @@ std::map<std::string, std::string> HttpMessage :: getHeaders() {
 /*                                  */
 //////////////////////////////////////
 
+////////////////////
 // Constructors 
-
+/////////////////// 
 HttpRequest :: HttpRequest(string url) {
 	setMethod("GET");
 	int index = 0;
@@ -76,7 +73,7 @@ HttpRequest :: HttpRequest(string url) {
 		host += url[index++];
 	}
 	if(url[index] == ':'){
-		// reset port_num 
+		// reset port_num if one is specified in URL 
 		port_num = ""; 
 		index++; 
 		while(url[index] != '/')
@@ -129,43 +126,40 @@ HttpRequest :: HttpRequest(ByteBlob wire) {
 	}
 }
 
-/* Taken out because decode is no longer defined 
-// Do we need this????????
-void HttpRequest :: decodeFirstLine(ByteBlob line) {
-  stringstream ss(decode(line));
-  ss >> m_method >> m_url;
-}
-*/
-void HttpRequest :: decodeFirstLine(ByteBlob line){
-	// added for compilation purposes
-	// Fix later 
-
-}
-
+///////////////////////////
+/// Getters 
+///////////////////////////
 HttpMethod HttpRequest :: getMethod() {
   return m_method;
-}
-
-void HttpRequest :: setMethod(HttpMethod method) {
-  m_method = method;
 }
 
 string HttpRequest :: getUrl() {
   return m_url;
 }
 
-void HttpRequest :: setUrl(string url) {
-  m_url = url;
-}
-
 string HttpRequest :: getPortNum(){
 	return m_port; 
+}
+
+///////////////////////////
+/// Setters 
+///////////////////////////
+void HttpRequest :: setMethod(HttpMethod method) {
+  m_method = method;
+}
+
+
+void HttpRequest :: setUrl(string url) {
+  m_url = url;
 }
 
 void HttpRequest :: setPortNum(string port_num){
 	m_port = port_num;
 }
 
+////////////////////////////
+/// Create a HttpRequest in byte format
+///////////////////////////
 ByteBlob HttpRequest :: encode() {
 	string firstLine = getMethod() + " " + getUrl() + " HTTP/" + getVersion() + "\r\n";
 	map<string, string> headers = getHeaders();
@@ -183,37 +177,31 @@ ByteBlob HttpRequest :: encode() {
 /*                                 */
 /////////////////////////////////////
 
-/*
-// Do we need this????????
-void HttpResponse :: decodeFirstLine(ByteBlob line) {	
-  stringstream ss(decode(line));
-  HttpVersion v;
-  ss >> v >> m_status >> m_statusDescription;
-  setVersion(v);
-}
-*/
-
-void HttpResponse :: decodeFirstLine(ByteBlob line){
-	// added for compilation purposes
-	// Fix later 
-}
-
+/////////////////////////////
+/// Getters
+/////////////////////////////
 HttpStatus HttpResponse :: getStatus() {
   return m_status;
-}
-
-void HttpResponse :: setStatus(HttpStatus status) {
-  m_status = status;
 }
 
 string HttpResponse :: getDescription() {
   return m_statusDescription;
 }
 
+/////////////////////////////
+/// Setters
+/////////////////////////////
+void HttpResponse :: setStatus(HttpStatus status) {
+  m_status = status;
+}
+
 void HttpResponse :: setDescription(string description) {
   m_statusDescription = description;
 }
 
+////////////////////////////
+/// Create a HttpResponse in byte format 
+///////////////////////////
 ByteBlob HttpResponse :: encode() {
 	string firstLine = "HTTP/" + getVersion() + " " + getStatus() + " " + getDescription() + "\r\n"; 
 	//cout << "setup" << endl;
