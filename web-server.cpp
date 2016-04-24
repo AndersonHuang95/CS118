@@ -67,6 +67,7 @@ void threadFunc(int clientSockfd) {
 	ByteBlob sendBuf = r.encode();
 	cout << "???" << endl;
 	int size = sendBuf.size();  
+	cout << "sendBuf: " << size << endl;
 	//cout << "writing" << endl;
 	ret = write(clientSockfd, sendBuf.data(), size); 
 	if (ret < 0)
