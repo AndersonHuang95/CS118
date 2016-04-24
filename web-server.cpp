@@ -21,8 +21,9 @@
 using namespace std;
 
 void threadFunc(int clientSockfd) {
-  // read/write data from/into the connection
-  ByteBlob buf(8192);
+	cout << "started threadFunc" << endl;
+	// read/write data from/into the connection
+	ByteBlob buf(8192);
 
 	int nbytes = recv(clientSockfd, &buf[0], buf.size(), 0);
 	if(nbytes > buf.size()) {
@@ -32,47 +33,56 @@ void threadFunc(int clientSockfd) {
 	if(nbytes == -1) {
 	  perror("recv");
 	}
-
+	cout << "recv done" << endl;
 	HttpRequest h(buf);
-	HttpResponse r;
 	
-	r.setStatus("200");
-	r.setDescription("OK");
-	r.setVersion("1.0");
-	r.setHeader("Date", "Sat, 23 Apr 2016 19:51:20 GMT");
-	r.setHeader("Expires", "-1");
-	r.setHeader("Cache-Control", "private, max-age=0");
-	r.setHeader("Content-Type", "text/html; charset=ISO-8859-1");
-	r.setHeader("P3P", "CP='This is not a P3P policy! See https://www.google.com/support/accounts/answer/151657?hl=en for more info.'");
-	r.setHeader("Server", "gws");
-	r.setHeader("X-XSS-Protection", "1; mode=block");
-	r.setHeader("X-Frame-Options", "SAMEORIGIN");
-	r.setHeader("Set-Cookie", "NID=78=OXe088LKrMmjLmlP4dzimxC83BjfzpSLBAclvzcwtS8J_w1OQmYa4HggH9IhOGfrTj2yVcU_WGem16hDgX3NPSjW1hzM3CTMkpSUfi2Eze-4AaGXRWO9kHzM2YJP8NgN5fxOw2jAA0s0Y3A; expires=Sun, 23-Oct-2016 19:51:20 GMT; path=/; domain=.google.com; HttpOnly");
-	r.setHeader("Accept-Ranges", "none");
-	r.setHeader("Vary", "Accept-Encoding");
-
-	int fd = open(h.getUrl().c_str(), O_RDONLY);
+	string str(buf.begin(), buf.end());
+	
+	cout << "Message: " << str << endl;
+	cout << "Filename is: " <<  h.getUrl().substr(1).c_str() << endl;
+	int fd = open(h.getUrl().substr(1).c_str(), O_RDONLY);
 	if (fd ==  -1) {
 		fprintf(stderr, "Error opening file --> %s", strerror(errno));
 	}
-
-
-	/* Get file stats */
-	struct stat file_stat;
-	if (fstat(fd, &file_stat) < 0) {
-		fprintf(stderr, "Error fstat --> %s", strerror(errno));
+	uint8_t fileBuf[8192];
+	ByteBlob payload;
+	int ret;
+	memset(fileBuf, 0, sizeof(fileBuf)); 
+	cout << "reading" << endl;
+	while ( (ret = read(fd, fileBuf, sizeof(fileBuf))) != 0) {
+		// std::cout << ret << std::endl;
+		if (ret < 0)
+			perror("file read failed"); 
+		payload.insert(payload.end(), fileBuf, fileBuf + ret);
+		memset(fileBuf, 0, sizeof(fileBuf)); 
 	}
-	r.setHeader("Content-Length", to_string(file_stat.st_size));
-	long int offset = 0;
+	HttpResponse r;
+	r.setStatus("200");
+	r.setDescription("OK");
+	r.setVersion("1.0");
+	r.setPayLoad(payload);
+	r.setHeader("Content-Length", to_string(payload.size()));
+	//cout << "encoding" << endl;
+	//cout << "payload size " << payload.size() << endl;
+	ByteBlob sendBuf = r.encode();
+	cout << "???" << endl;
+	int size = sendBuf.size();  
+	//cout << "writing" << endl;
+	ret = write(clientSockfd, sendBuf.data(), size); 
+	if (ret < 0)
+		perror("socket write failed");
+	
+	
+	/*long int offset = 0;
 	int remain_data = file_stat.st_size;
 	int sent_bytes;
-	/* Sending file data */
-	while (((sent_bytes = sendfile(clientSockfd, fd, &offset, BUFSIZ)) > 0) && (remain_data > 0)) {
+	/* Sending file data 
+	while (((sent_bytes = send(clientSockfd, sendBuf.c_str(), ret, BUFSIZ)) > 0) && (remain_data > 0)) {
 		fprintf(stdout, "1. Server sent %d bytes from file's data, offset is now : %d and remaining data = %d\n", sent_bytes, offset, remain_data);
 		remain_data -= sent_bytes;
 		fprintf(stdout, "2. Server sent %d bytes from file's data, offset is now : %d and remaining data = %d\n", sent_bytes, offset, remain_data);
-	}
-
+	}*/
+	cout << "Sent" << endl;
 	close(clientSockfd);
 }
 
@@ -106,7 +116,7 @@ int main(int argc, char **argv)
     cerr << "getaddrinfo: " << gai_strerror(status) << endl;
     return 2;
   }
-
+	cout << "Resolve" << endl;
   struct addrinfo* p = res;
   // convert address to IPv4 address
   struct sockaddr_in* ipv4 = (struct sockaddr_in*)p->ai_addr;
@@ -126,12 +136,12 @@ int main(int argc, char **argv)
     perror("setsockopt");
     return 1;
   }
-
-  // bind address to socket
+	cout << "Bind" << endl;  // bind address to socket
   struct sockaddr_in addr;
   addr.sin_family = AF_INET;
   addr.sin_port = htons(stoi(port));     // short, network byte order
-  addr.sin_addr.s_addr = inet_addr(hostName.c_str());
+  //cout << ipstr << endl;
+  addr.sin_addr.s_addr = inet_addr(ipstr);
   memset(addr.sin_zero, '\0', sizeof(addr.sin_zero));
 
   if (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
@@ -139,25 +149,28 @@ int main(int argc, char **argv)
     return 2;
   }
 
-  // set socket to listen status
-  if (listen(sockfd, 1) == -1) {
-    perror("listen");
-    return 3;
-  }
-
 
   // accept a new connection
-  int clientSockfd;
   while(true) {
+  cout << "Loop" << endl;
+    int clientSockfd;
+   // set socket to listen status
+    if (listen(sockfd, 1) == -1) {
+    perror("listen");
+    return 3;
+    }
+    cout << "Listen done" << endl;
     struct sockaddr_in clientAddr;
     socklen_t clientAddrSize = sizeof(clientAddr);
     clientSockfd = accept(sockfd, (struct sockaddr*)&clientAddr, &clientAddrSize);
-    
+    cout << "Accept done" << endl;
     if (clientSockfd == -1) {
       perror("accept");
     return 4;
     }
-    thread(threadFunc, clientSockfd);
+    cout << "making threads" << endl;
+    thread(threadFunc, clientSockfd).detach();
+    cout << "end of loop" << endl;
   }
 
   return 0;
