@@ -91,21 +91,32 @@ int main(int argc, char **argv)
 	if (filename.empty())
 		filename = "index.html";
 
-	// Read all data first before parsing 
+	// Read until \r\n\r\n is found
+	// This is the end of HTTP response header
+	// and start of HTTP response body (data) 
+	int index = 0; 
 	uint8_t buf[8192];
 	memset(buf, 0, sizeof(buf)); 
 	while ( (ret = read(sockfd, buf, sizeof(buf))) != 0) {
-		// std::cout << ret << std::endl;
 		if (ret < 0){
 			perror("socket read failed"); 
 			exit(4); 
 		}
 		response.insert(response.end(), buf, buf + ret);
 		memset(buf, 0, sizeof(buf)); 
-	}
 
+		// find \r\n\r\n
+		while( ( (index + 3) < response.size() )  && (response[index] != '\r' || response[index + 1] != '\n' || response[index + 2] != '\r' || response[index + 3] != '\n') )
+			index++;
+		if (response[index] == '\r' && response[index + 1] == '\n' && response[index + 2] == '\r' && response[index + 3] == '\n'){
+			break;
+		}
+	}
+	
+	// Save where body starts
+	int body_index = index + 4; 
 	// Parse reponse for HttpResponse Code
-	int index = 0; 
+	index = 0; 
 	while(response[index] != ' '){
 		++index; 
 	}
@@ -137,15 +148,22 @@ int main(int argc, char **argv)
 		exit(1); 
 	}
 
-	// Advance to response payload
-	while(response[index] != '\r' || response[index + 1] != '\n' || response[index + 2] != '\r' || response[index + 3] != '\n')
-		index++;
-	index = index + 4; 
-
-	// Copy response body into output file stream 
+	// Copy leftover bytes from response body into file 
 	std::ofstream outfile(filename, std::ios::out | std::ios::binary);
 	std::ostream_iterator<uint8_t> oi(outfile, ""); 
-	std::copy(response.begin() + index, response.end(), oi); 
+	std::copy(response.begin() + body_index, response.end(), oi); 
+
+	// Read the rest of the file 
+	while ( (ret = read(sockfd, buf, sizeof(buf))) != 0) {
+		// std::cout << ret << std::endl;
+		if (ret < 0){
+			perror("socket read failed"); 
+			exit(4); 
+		}
+		ByteBlob segment(buf, buf + ret); 
+		std::copy(segment.begin(), segment.end(), oi); 
+		memset(buf, 0, sizeof(buf)); 
+	}
 
 	// free unneeded structures, close fds 
 	freeaddrinfo(server_info); 
