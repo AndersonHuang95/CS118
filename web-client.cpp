@@ -120,17 +120,17 @@ int main(int argc, char **argv)
 	if(status_code == "200")
 		std::cout << "200 OK\nSaving file to " << filename << "\n";
 	else if (status_code == "400")
-		std::cout << "400 Bad Request\n";
+		std::cerr << "400 Bad Request\n";
 	else if (status_code == "404")
-		std::cout << "404 Not Found\n";
+		std::cerr << "404 Not Found\n";
 	else if (status_code == "403")
-		std::cout << "403 Forbidden\n";
+		std::cerr << "403 Forbidden\n";
 	else if (status_code == "501")
-		std::cout << "501 Not Implemented\n"; 
+		std::cerr << "501 Not Implemented\n"; 
 	else if (status_code == "505")
-		std::cout << "505 HTTP version not supported\n";
+		std::cerr << "505 HTTP version not supported\n";
 	else
-		std::cout << status_code << " error code encountered\n";
+		std::cerr << status_code << " error code encountered\n";
 
 	// Exit upon unsuccessful retrieval 
 	if(status_code != "200"){
