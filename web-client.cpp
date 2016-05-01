@@ -56,7 +56,8 @@ int main(int argc, char **argv)
 	        continue;
 	    }
 
-	    break; // if we get here, we must have connected successfully
+	    // reaching this point means we have connected successfully 
+	    break; 
 	}
 
 	if (p == NULL) {
@@ -94,7 +95,7 @@ int main(int argc, char **argv)
 	// Read until \r\n\r\n is found
 	// This is the end of HTTP response header
 	// and start of HTTP response body (data) 
-	int index = 0; 
+	size_t index = 0; 
 	uint8_t buf[8192];
 	memset(buf, 0, sizeof(buf)); 
 	while ( (ret = read(sockfd, buf, sizeof(buf))) != 0) {
@@ -148,8 +149,8 @@ int main(int argc, char **argv)
 		exit(1); 
 	}
 
-	// Copy leftover bytes from response body into file 
-	std::ofstream outfile(filename, std::ios::out | std::ios::binary);
+	// Copy leftover bytes from response body into file(do not copy over header bytes)
+	std::ofstream outfile(filename, std::ios::out | std::ios::binary );
 	std::ostream_iterator<uint8_t> oi(outfile, ""); 
 	std::copy(response.begin() + body_index, response.end(), oi); 
 
