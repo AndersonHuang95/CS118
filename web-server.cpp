@@ -21,70 +21,76 @@
 using namespace std;
 
 void threadFunc(int clientSockfd) {
-	cout << "started threadFunc" << endl;
+	//cout << "starting threadFunc: " << clientSockfd << endl;
+	//cout << "started threadFunc" << endl;
 	// read/write data from/into the connection
 	ByteBlob buf(8192);
 
 	int nbytes = recv(clientSockfd, &buf[0], buf.size(), 0);
-	if(nbytes > buf.size()) {
+	if(nbytes > (int)buf.size()) {
 	  buf.resize(nbytes);
 	  nbytes = recv(clientSockfd, &buf[0], buf.size(), 0);
 	}
 	if(nbytes == -1) {
 	  perror("recv");
 	}
-	cout << "recv done" << endl;
+	//cout << "recv done" << endl;
+	
 	HttpRequest h(buf);
-	
-	string str(buf.begin(), buf.end());
-	
-	cout << "Message: " << str << endl;
-	cout << "Filename is: " <<  h.getUrl().substr(1).c_str() << endl;
-	int fd = open(h.getUrl().substr(1).c_str(), O_RDONLY);
-	if (fd ==  -1) {
-		fprintf(stderr, "Error opening file --> %s", strerror(errno));
-	}
-	uint8_t fileBuf[8192];
-	ByteBlob payload;
-	int ret;
-	memset(fileBuf, 0, sizeof(fileBuf)); 
-	cout << "reading" << endl;
-	while ( (ret = read(fd, fileBuf, sizeof(fileBuf))) != 0) {
-		// std::cout << ret << std::endl;
-		if (ret < 0)
-			perror("file read failed"); 
-		payload.insert(payload.end(), fileBuf, fileBuf + ret);
-		memset(fileBuf, 0, sizeof(fileBuf)); 
-	}
 	HttpResponse r;
-	r.setStatus("200");
-	r.setDescription("OK");
 	r.setVersion("1.0");
-	r.setPayLoad(payload);
-	r.setHeader("Content-Length", to_string(payload.size()));
+	
+	if(h.getMethod() != "GET" || (h.getVersion() != "/1.0" && h.getVersion() != "/1.1")) {
+		//cout << "Error 400" << endl;
+		//cout << h.getMethod() << endl;
+		//cout << h.getVersion() << endl;
+		r.setStatus("400");
+		r.setDescription("Bad request");
+	}
+	else {
+		string str(buf.begin(), buf.end());
+		//cout << "Message: " << str << endl;
+		//cout << "Filename is: " <<  h.getUrl().substr(1).c_str() << endl;
+		int fd = open(h.getUrl().substr(1).c_str(), O_RDONLY);
+		if (fd ==  -1) {
+			//cout << "Error 404" << endl;
+			r.setStatus("404");
+			r.setDescription("Not found");
+		}
+		else {
+			//cout << "200" << endl;
+			r.setStatus("200");
+			r.setDescription("OK");
+			uint8_t fileBuf[8192];
+			ByteBlob payload;
+			int ret;
+			memset(fileBuf, 0, sizeof(fileBuf)); 
+			//cout << "reading" << endl;
+			while ( (ret = read(fd, fileBuf, sizeof(fileBuf))) != 0) {
+				// std::cout << ret << std::endl;
+				if (ret < 0)
+					perror("file read failed"); 
+				payload.insert(payload.end(), fileBuf, fileBuf + ret);
+				memset(fileBuf, 0, sizeof(fileBuf)); 
+			}
+			r.setHeader("Content-Length", to_string(payload.size()));
+			r.setPayLoad(payload);
+		}
+	}
+	
 	//cout << "encoding" << endl;
 	//cout << "payload size " << payload.size() << endl;
 	ByteBlob sendBuf = r.encode();
-	cout << "???" << endl;
+	//cout << "???" << endl;
 	int size = sendBuf.size();  
-	cout << "sendBuf: " << size << endl;
+	//cout << "sendBuf: " << size << endl;
 	//cout << "writing" << endl;
-	ret = write(clientSockfd, sendBuf.data(), size); 
+	int ret = write(clientSockfd, sendBuf.data(), size); 
 	if (ret < 0)
 		perror("socket write failed");
 	
-	
-	/*long int offset = 0;
-	int remain_data = file_stat.st_size;
-	int sent_bytes;
-	/* Sending file data 
-	while (((sent_bytes = send(clientSockfd, sendBuf.c_str(), ret, BUFSIZ)) > 0) && (remain_data > 0)) {
-		fprintf(stdout, "1. Server sent %d bytes from file's data, offset is now : %d and remaining data = %d\n", sent_bytes, offset, remain_data);
-		remain_data -= sent_bytes;
-		fprintf(stdout, "2. Server sent %d bytes from file's data, offset is now : %d and remaining data = %d\n", sent_bytes, offset, remain_data);
-	}*/
-	cout << "Sent" << endl;
 	close(clientSockfd);
+	//cout << "ending threadFunc: " << clientSockfd << endl;
 }
 
 
@@ -117,7 +123,7 @@ int main(int argc, char **argv)
     cerr << "getaddrinfo: " << gai_strerror(status) << endl;
     return 2;
   }
-	cout << "Resolve" << endl;
+	//cout << "Resolve" << endl;
   struct addrinfo* p = res;
   // convert address to IPv4 address
   struct sockaddr_in* ipv4 = (struct sockaddr_in*)p->ai_addr;
@@ -137,7 +143,7 @@ int main(int argc, char **argv)
     perror("setsockopt");
     return 1;
   }
-	cout << "Bind" << endl;  // bind address to socket
+	//cout << "Bind" << endl;  // bind address to socket
   struct sockaddr_in addr;
   addr.sin_family = AF_INET;
   addr.sin_port = htons(stoi(port));     // short, network byte order
@@ -153,25 +159,25 @@ int main(int argc, char **argv)
 
   // accept a new connection
   while(true) {
-  cout << "Loop" << endl;
+  //cout << "Loop" << endl;
     int clientSockfd;
    // set socket to listen status
     if (listen(sockfd, 1) == -1) {
     perror("listen");
     return 3;
     }
-    cout << "Listen done" << endl;
+    //cout << "Listen done" << endl;
     struct sockaddr_in clientAddr;
     socklen_t clientAddrSize = sizeof(clientAddr);
     clientSockfd = accept(sockfd, (struct sockaddr*)&clientAddr, &clientAddrSize);
-    cout << "Accept done" << endl;
+    //cout << "Accept done" << endl;
     if (clientSockfd == -1) {
       perror("accept");
     return 4;
     }
-    cout << "making threads" << endl;
+    //cout << "making threads" << endl;
     thread(threadFunc, clientSockfd).detach();
-    cout << "end of loop" << endl;
+    //cout << "end of loop" << endl;
   }
 
   return 0;
