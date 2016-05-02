@@ -180,7 +180,7 @@ int main(int argc, char **argv)
   //cout << "Loop" << endl;
     int clientSockfd;
    // set socket to listen status
-    if (listen(sockfd, 1) == -1) {
+    if (listen(sockfd, 16) == -1) {
     perror("listen");
     return 3;
     }
