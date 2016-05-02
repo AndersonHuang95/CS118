@@ -15,6 +15,9 @@
 #include <iterator> 
 #include "HTTP-message.h" 
 
+#define PACKET_SIZE 8192 
+#define TIMEOUT_SEC 60
+
 int main(int argc, char **argv)
 {
 	// Parse command line args
@@ -37,7 +40,7 @@ int main(int argc, char **argv)
 
 	std::map<std::string, std::string> headers = request.getHeaders(); 
 	if ((ret = getaddrinfo(headers["Host"].c_str(), request.getPortNum().c_str(), &hints, &server_info)) != 0) {
-	    std::cerr << "getaddrinfo: %s\n", gai_strerror(ret);
+	    std::cerr << "getaddrinfo: IP address could not be found";
 	    exit(1);
 	}
 
@@ -65,6 +68,17 @@ int main(int argc, char **argv)
 	    std::cerr << "Failed to connect\n"; 
 	    exit(2);
 	}
+
+	/* Timeout for client */ 
+	struct timeval timeout;      
+    timeout.tv_sec = TIMEOUT_SEC;
+    timeout.tv_usec = 0;
+
+    if (setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
+        perror("Failed to set socket option");
+
+    if (setsockopt (sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
+        perror("Failed to set socket option");
 
 	// Send and receive data 
 	ByteBlob response; 
@@ -96,9 +110,9 @@ int main(int argc, char **argv)
 	// This is the end of HTTP response header
 	// and start of HTTP response body (data) 
 	size_t index = 0; 
-	uint8_t buf[8192];
+	uint8_t buf[PACKET_SIZE];
 	memset(buf, 0, sizeof(buf)); 
-	while ( (ret = read(sockfd, buf, sizeof(buf))) != 0) {
+	while ( (ret = read(sockfd, buf, sizeof(buf))) != 0) { 
 		if (ret < 0){
 			perror("socket read failed"); 
 			exit(4); 
