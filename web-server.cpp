@@ -38,6 +38,7 @@ void threadFunc(int clientSockfd) {
 	
 	HttpRequest h(buf);
 	HttpResponse r;
+	
 	r.setVersion("1.0");
 	
 	if(h.getMethod() != "GET" || (h.getVersion() != "/1.0" && h.getVersion() != "/1.1")) {
@@ -58,37 +59,54 @@ void threadFunc(int clientSockfd) {
 			r.setDescription("Not found");
 		}
 		else {
-			//cout << "200" << endl;
 			r.setStatus("200");
 			r.setDescription("OK");
 			uint8_t fileBuf[8192];
 			ByteBlob payload;
 			int ret;
+			bool isFirst = true;
 			memset(fileBuf, 0, sizeof(fileBuf)); 
-			//cout << "reading" << endl;
 			while ( (ret = read(fd, fileBuf, sizeof(fileBuf))) != 0) {
-				// std::cout << ret << std::endl;
 				if (ret < 0)
 					perror("file read failed"); 
+					
 				payload.insert(payload.end(), fileBuf, fileBuf + ret);
-				memset(fileBuf, 0, sizeof(fileBuf)); 
+				memset(fileBuf, 0, sizeof(fileBuf));
+				if(payload.size() >= 8193) {
+					if(isFirst) {
+						r.setHeader("Content-Length", to_string(payload.size()));
+						r.setPayLoad(payload);
+						ByteBlob sendBuf = r.encode(); 
+						ret = write(clientSockfd, sendBuf.data(), sendBuf.size());
+						isFirst = false;
+						payload.clear(); 
+					}
+					else {
+						ret = write(clientSockfd, payload.data(), payload.size());
+						payload.clear();
+					}
+					if (ret < 0)
+						perror("socket write failed");
+				}			 
 			}
-			r.setHeader("Content-Length", to_string(payload.size()));
-			r.setPayLoad(payload);
+			if(!payload.empty()) {
+				if(isFirst) {
+					r.setHeader("Content-Length", to_string(payload.size()));
+					r.setPayLoad(payload);
+					ByteBlob sendBuf = r.encode(); 
+					ret = write(clientSockfd, sendBuf.data(), sendBuf.size());
+					isFirst = false;
+					payload.clear(); 
+				}
+				else {
+					ret = write(clientSockfd, payload.data(), payload.size());
+					payload.clear();
+				}
+				if (ret < 0)
+					perror("socket write failed");
+			}
 		}
 	}
-	
-	//cout << "encoding" << endl;
-	//cout << "payload size " << payload.size() << endl;
-	ByteBlob sendBuf = r.encode();
-	//cout << "???" << endl;
-	int size = sendBuf.size();  
-	//cout << "sendBuf: " << size << endl;
-	//cout << "writing" << endl;
-	int ret = write(clientSockfd, sendBuf.data(), size); 
-	if (ret < 0)
-		perror("socket write failed");
-	
 	close(clientSockfd);
 	//cout << "ending threadFunc: " << clientSockfd << endl;
 }
