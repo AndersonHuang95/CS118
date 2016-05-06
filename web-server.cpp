@@ -28,20 +28,23 @@ void threadFunc(int clientSockfd) {
 
 	time_t old_timer; 
 	time(&old_timer); 
-	cout << "Socket starting at " << old_timer << endl; 
+	//	cout << "Socket starting at " << old_timer << endl; 
 	//cout << "starting threadFunc: " << clientSockfd << endl;
 	//cout << "started threadFunc" << endl;
 	// read/write data from/into the connection
 	ByteBlob buf(8192);
 
 	int nbytes = recv(clientSockfd, &buf[0], buf.size(), 0);
+	if(nbytes == -1 || nbytes == 0) {
+	  cerr << "recv" << endl;
+	  close(clientSockfd);
+	  return;
+	}
 	if(nbytes > (int)buf.size()) {
-	  buf.resize(nbytes);
-	  nbytes = recv(clientSockfd, &buf[0], buf.size(), 0);
-	}
-	if(nbytes == -1) {
-	  perror("recv");
-	}
+          buf.resize(nbytes);
+          nbytes = recv(clientSockfd, &buf[0], buf.size(), 0);
+        }
+
 	//cout << "recv done" << endl;
 	
 	HttpRequest h(buf);
@@ -87,13 +90,14 @@ void threadFunc(int clientSockfd) {
 			while ( (ret = read(fd, fileBuf, sizeof(fileBuf))) != 0) {
 				time_t new_timer; 
 				time(&new_timer); 
-				cout << "Socket starting at " << new_timer << endl; 
+				//		cout << "Socket starting at " << new_timer << endl; 
 
 				if(difftime(new_timer, old_timer) > TIMEOUT_SEC){
 					close(clientSockfd); 
 					cout << "Connection timed out\n"; 
 					return; 
 				}
+				time(&old_timer);
 				if (ret < 0)
 					perror("file read failed"); 
 					
