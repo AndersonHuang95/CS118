@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/sendfile.h>
+#include <signal.h>
 
 #include <string>
 #include <iostream>
@@ -95,8 +96,10 @@ void threadFunc(int clientSockfd) {
 						ret = write(clientSockfd, payload.data(), payload.size());
 						payload.clear();
 					}
-					if (ret < 0)
+					if (ret < 0) {
 						perror("socket write failed");
+						break;
+					}
 				}			 
 			}
 			if(!payload.empty()) {
@@ -112,8 +115,9 @@ void threadFunc(int clientSockfd) {
 					ret = write(clientSockfd, payload.data(), payload.size());
 					payload.clear();
 				}
-				if (ret < 0)
+				if (ret < 0) {
 					perror("socket write failed");
+				}
 			}
 		}
 	}
@@ -171,6 +175,10 @@ int main(int argc, char **argv)
     perror("setsockopt");
     return 1;
   }
+
+  signal(SIGPIPE, SIG_IGN); //server ignores signals, and no longer crashes on invalid sockets
+
+
 	//cout << "Bind" << endl;  // bind address to socket
   struct sockaddr_in addr;
   addr.sin_family = AF_INET;
