@@ -69,6 +69,7 @@ int main(int argc, char **argv)
 	    exit(2);
 	}
 
+	sleep(10); 
 	/* Timeout for client */ 
 	struct timeval timeout;      
     timeout.tv_sec = TIMEOUT_SEC;

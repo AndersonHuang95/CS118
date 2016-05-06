@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <sys/sendfile.h>
 #include <sys/select.h>
+#include <signal.h> 
 
 #include <string>
 #include <iostream>
@@ -83,6 +84,9 @@ int main(int argc, char **argv)
   		perror("setsockopt");
   		return 1;
   	}
+
+    signal(SIGPIPE, SIG_IGN); //server ignores signals, and no longer crashes on invalid sockets
+
 	//cout << "Bind" << endl;  // bind address to socket
   	struct sockaddr_in addr;
   	addr.sin_family = AF_INET;
@@ -184,6 +188,10 @@ int main(int argc, char **argv)
 							//cout << h.getVersion() << endl;
   							r.setStatus("400");
   							r.setDescription("Bad request");
+                ByteBlob sendBuf = r.encode();
+                int ret = write(clientSockfd, sendBuf.data(), sendBuf.size());
+                if (ret < 0)
+                  perror("socket write failed");
   						}
   						else {
   							string str(buf.begin(), buf.end());
@@ -194,6 +202,10 @@ int main(int argc, char **argv)
 								//cout << "Error 404" << endl;
   								r.setStatus("404");
   								r.setDescription("Not found");
+                  ByteBlob sendBuf = r.encode();
+                  int ret = write(clientSockfd, sendBuf.data(), sendBuf.size());
+                  if (ret < 0)
+                    perror("socket write failed");
   							}	
   							else {
   								r.setStatus("200");
@@ -222,8 +234,10 @@ int main(int argc, char **argv)
   											ret = write(clientSockfd, payload.data(), payload.size());
   											payload.clear();
   										}
-  										if (ret < 0)
+  										if (ret < 0) {
   											perror("socket write failed");
+                        break;
+                      }
   									}			 
   								}
   								if(!payload.empty()) {

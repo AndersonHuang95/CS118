@@ -13,15 +13,22 @@
 #include <fcntl.h>
 #include <sys/sendfile.h>
 #include <signal.h>
+#include <time.h> 
 
 #include <string>
 #include <iostream>
 #include <sstream>
 #include <thread>
 
+#define TIMEOUT_SEC 5
+
 using namespace std;
 
 void threadFunc(int clientSockfd) {
+
+	time_t old_timer; 
+	time(&old_timer); 
+	cout << "Socket starting at " << old_timer << endl; 
 	//cout << "starting threadFunc: " << clientSockfd << endl;
 	//cout << "started threadFunc" << endl;
 	// read/write data from/into the connection
@@ -78,6 +85,15 @@ void threadFunc(int clientSockfd) {
 			bool isFirst = true;
 			memset(fileBuf, 0, sizeof(fileBuf)); 
 			while ( (ret = read(fd, fileBuf, sizeof(fileBuf))) != 0) {
+				time_t new_timer; 
+				time(&new_timer); 
+				cout << "Socket starting at " << new_timer << endl; 
+
+				if(difftime(new_timer, old_timer) > TIMEOUT_SEC){
+					close(clientSockfd); 
+					cout << "Connection timed out\n"; 
+					return; 
+				}
 				if (ret < 0)
 					perror("file read failed"); 
 					
