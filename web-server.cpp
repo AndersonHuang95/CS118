@@ -47,6 +47,11 @@ void threadFunc(int clientSockfd) {
 		//cout << h.getVersion() << endl;
 		r.setStatus("400");
 		r.setDescription("Bad request");
+		ByteBlob sendBuf = r.encode();
+		int ret = write(clientSockfd, sendBuf.data(), sendBuf.size());
+		if (ret < 0)
+		  perror("socket write failed");
+
 	}
 	else {
 		string str(buf.begin(), buf.end());
@@ -57,6 +62,11 @@ void threadFunc(int clientSockfd) {
 			//cout << "Error 404" << endl;
 			r.setStatus("404");
 			r.setDescription("Not found");
+			ByteBlob sendBuf = r.encode();
+			int ret = write(clientSockfd, sendBuf.data(), sendBuf.size());
+			if (ret < 0)
+			  perror("socket write failed");
+
 		}
 		else {
 			r.setStatus("200");
